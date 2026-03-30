@@ -2,7 +2,9 @@
 
 A tiny macOS menu bar app that tells you **in real time** when Claude.ai peak hours are happening.
 
-
+<p align="center">
+  <img src="demo.gif" width="700" alt="ClaudeSaidNo menu bar">
+</p>
 
 - **🟢 ClaudeSaidYes** = Off-peak → Go code heavy.
 - **🔴 ClaudeSaidNo** = Peak (Weekdays 5–11 AM PT) → Limits burn faster.
