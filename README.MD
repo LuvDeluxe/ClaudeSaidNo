@@ -20,8 +20,8 @@ A tiny macOS menu bar app that tells you **in real time** when Claude.ai peak ho
 
 # Features
 
-Live Countdown: See exactly when peak hours end/start down to the second.
+1. ** Live Countdown: See exactly when peak hours end/start down to the second.
 
-Zero Bloat: Lightweight Python script using rumps.
+2. ** Zero Bloat: Lightweight Python script using rumps.
 
-Automatic Timezones: Handles the PT to Local conversion for you.
+3. ** RAutomatic Timezones: Handles the PT to Local conversion for you.
