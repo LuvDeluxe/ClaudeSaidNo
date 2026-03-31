@@ -9,6 +9,11 @@ import pytz
 import webbrowser
 from tzlocal import get_localzone
 
+# ── Configuration ────────────────────────────────────────────────────────────
+PEAK_START_HOUR = 5
+PEAK_END_HOUR = 11
+PT_TZ = pytz.timezone("America/Los_Angeles")
+
 
 class ClaudeSaidNo(rumps.App):
     def __init__(self):
@@ -53,9 +58,8 @@ class ClaudeSaidNo(rumps.App):
         self._timer.start()
 
     # ── Helpers ───────────────────────────────────────────────────────────────
-
     def _pt_now(self) -> datetime.datetime:
-        return datetime.datetime.now(pytz.timezone("America/Los_Angeles"))
+        return datetime.datetime.now(PT_TZ)
 
     def _is_weekend(self, pt: datetime.datetime) -> bool:
         return pt.weekday() >= 5
@@ -63,7 +67,7 @@ class ClaudeSaidNo(rumps.App):
     def _is_peak(self, pt: datetime.datetime) -> bool:
         if self._is_weekend(pt):
             return False
-        return 5 <= pt.hour < 11
+        return PEAK_START_HOUR <= pt.hour < PEAK_END_HOUR
 
     @staticmethod
     def _fmt_delta(total_seconds: int) -> str:
@@ -82,28 +86,35 @@ class ClaudeSaidNo(rumps.App):
             if days_until_monday == 0:
                 days_until_monday = 7
             next_peak = (now + datetime.timedelta(days=days_until_monday)).replace(
-                hour=5, minute=0, second=0, microsecond=0
+                hour=PEAK_START_HOUR, minute=0, second=0, microsecond=0
             )
             delta = int((next_peak - now).total_seconds())
             return f"😎 Weekend — next peak in {self._fmt_delta(delta)}"
 
         if self._is_peak(now):
-            peak_end = now.replace(hour=11, minute=0, second=0, microsecond=0)
+            peak_end = now.replace(hour=PEAK_END_HOUR, minute=0, second=0, microsecond=0)
             delta = int((peak_end - now).total_seconds())
             return f"🔴 Peak — ends in {self._fmt_delta(delta)}"
-        else:
-            if now.weekday() == 4:  # Friday after peak → next Mon
-                days_ahead = 3
-            else:
-                days_ahead = 1
-            next_peak = (now + datetime.timedelta(days=days_ahead)).replace(
-                hour=5, minute=0, second=0, microsecond=0
+
+        # ── Off-peak on a weekday ─────────────────────────────────────
+        if now.hour < PEAK_START_HOUR:
+            # Early morning (Mon–Fri) → today at 5 AM
+            next_peak = now.replace(
+                hour=PEAK_START_HOUR, minute=0, second=0, microsecond=0
             )
-            delta = int((next_peak - now).total_seconds())
-            return f"🟢 Off-peak — next peak in {self._fmt_delta(delta)}"
+        elif now.weekday() == 4:  # Friday after peak
+            next_peak = (now + datetime.timedelta(days=3)).replace(
+                hour=PEAK_START_HOUR, minute=0, second=0, microsecond=0
+            )
+        else:  # Monday–Thursday after peak
+            next_peak = (now + datetime.timedelta(days=1)).replace(
+                hour=PEAK_START_HOUR, minute=0, second=0, microsecond=0
+            )
+
+        delta = int((next_peak - now).total_seconds())
+        return f"🟢 Off-peak — next peak in {self._fmt_delta(delta)}"
 
     # ── Timer tick ────────────────────────────────────────────────────────────
-
     def _tick(self, _sender):
         now_pt = self._pt_now()
         peak = self._is_peak(now_pt)
@@ -134,12 +145,12 @@ class ClaudeSaidNo(rumps.App):
         self.last_peak = peak
 
         self.countdown_item.title = self._countdown_text()
+
         local_str = datetime.datetime.now(self.local_tz).strftime("%H:%M")
         pt_str = now_pt.strftime("%H:%M")
         self.local_time_item.title = f"Your time: {local_str} • PT: {pt_str}"
 
     # ── Menu callbacks ────────────────────────────────────────────────────────
-
     def open_claude(self, _):
         webbrowser.open("https://claude.ai")
 
@@ -152,4 +163,3 @@ class ClaudeSaidNo(rumps.App):
 
 if __name__ == "__main__":
     ClaudeSaidNo().run()
-
